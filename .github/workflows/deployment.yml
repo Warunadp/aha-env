@@ -1,0 +1,40 @@
+name: Deployment
+on:
+  push:
+    branches:
+      - main
+env:  # Can define variable in jobs or steps.
+  MONGODB_DB_NAME: gha-demo   # MONGODB_DB_NAME will be available in all jobs unless a job overrides this variable by defining a variable of the same name.
+jobs:
+  test:
+    env: 
+      MONGODB_CLUSTER_ADDRESS: cluster0.uzlhneg.mongodb.net
+      MONGODB_USERNAME: warunadap
+      MONGODB_PASSWORD: B66OBgwBMgfRs94i
+      PORT: 8080
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get code
+        uses: actions/checkout@v3
+      - name: Cache dependencies 
+        uses: actions/cache@v3  
+        with:
+          path: ~/.npm 
+          key: deps-node-modules-${{ hashFiles('**/package-lock.json') }} 
+      - name: Install dependencies 
+        run: npm ci
+      - name: Run server
+        run: npm start & npx wait-on http://127.0.0.1:$PORT
+      - name: Run tests
+        run: npm test
+      - name: Output information
+        run: |
+          echo "MONGODB_USERNAME: ${{ env.MONGODB_USERNAME }}"
+  deploy:
+    needs: test 
+    runs-on: ubuntu-latest
+    steps: 
+      - name: Output information 
+        run: |
+          echo "MONGODB_USERNAME: ${{ env.MONGODB_USERNAME }}"
+          echo "MONGODB_DB_NAME: ${{ env.MONGODB_DB_NAME }}"
